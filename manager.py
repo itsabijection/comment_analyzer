@@ -17,11 +17,11 @@ if __name__=="__main__":
     pipes=[]
     processes=[]
     for i in range(max_processes):
-        pipes.append(Pipe())
+        pipes.append(Pipe(duplex="False"))
         processes.append(Process(target=make_stats, args=(int(num_files/max_processes)*i,int(num_files/max_processes)*(i+1), pipes[i][1])))
         processes[i].start()
-    for i in processes:
-        i.join()
+    for i in pipes:
+        print(i[0].recv()[0:2])
 end=time.time()
 print("total time:")
 print(end-start)

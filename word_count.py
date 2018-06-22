@@ -31,25 +31,31 @@ def make_stats(low=0, hi="hi", pipe=None):
     start=time.time()
     word_counts=dd(fd)
     word_POS_counts=dd(dd_of_fd)
-    for site in site_list:
-        direc=direc_prefix+site+"/"
-        #slightly hacky. please fix
-        i=0
-        for filename in os.listdir(direc):
-            if filename.startswith("comment"):
-                if hi=="hi" or i in range(low, hi):
-                    with open(direc+filename, "rb") as comment_list_file:
-                        comment_list=pickle.load(comment_list_file)
-                        for comment in comment_list:
-                            tagged_comment=pos_tag(word_tokenize(comment["raw_message"]))
-                            for word_POS_pair in tagged_comment:
-                                    #was trimming, but i think that will just mess up
-                                    #the tagging
-                                    #well, the stemmer was working less well that i hoped
-                                    base_word=trim(word_POS_pair[0].lower())#stemmer.stem(word_POS_pair[0].lower())
-                                    word_counts[site][base_word]+=1
-                                    word_POS_counts[site][base_word][word_POS_pair[1]]+=1
-                i+=1
+    try:
+        with open("/home/benjamin/sfi/project_stuff/data/analysis_data"+str(low)+".pkl", "rb") as f:
+            d=pickle.load(f)
+            word_counts=d[0]
+            word_POS_counts=d[1]
+    except:
+        for site in site_list:
+            direc=direc_prefix+site+"/"
+            #slightly hacky. please fix
+            i=0
+            for filename in os.listdir(direc):
+                if filename.startswith("comment"):
+                    if hi=="hi" or i in range(low, hi):
+                        with open(direc+filename, "rb") as comment_list_file:
+                            comment_list=pickle.load(comment_list_file)
+                            for comment in comment_list:
+                                tagged_comment=pos_tag(word_tokenize(comment["raw_message"]))
+                                for word_POS_pair in tagged_comment:
+                                        #was trimming, but i think that will just mess up
+                                        #the tagging
+                                        #well, the stemmer was working less well that i hoped
+                                        base_word=trim(word_POS_pair[0].lower())#stemmer.stem(word_POS_pair[0].lower())
+                                        word_counts[site][base_word]+=1
+                                        word_POS_counts[site][base_word][word_POS_pair[1]]+=1
+                    i+=1
     pickle.dump([word_counts, word_POS_counts], open("/home/benjamin/sfi/project_stuff/data/analysis_data"+str(low)+".pkl", "wb"))
     #if we called this as part of a multiprocess
     if pipe is not None:
@@ -57,12 +63,11 @@ def make_stats(low=0, hi="hi", pipe=None):
         begin_piping=time.time()
         print(begin_piping-start)
         pipe.send([word_counts, word_POS_counts])
-        #pipe.send(word_counts)
-        #pipe.send(word_POS_counts)
+        #one gig test. under 2 seconds
+        #pipe.send("0"*1000000000)
         pipe.close()
         print("time to pipe "+str(low)+":")
         print(time.time()-begin_piping)
-        return
     else:
         return [word_counts, word_POS_counts]
 

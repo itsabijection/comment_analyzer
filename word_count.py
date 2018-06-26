@@ -49,6 +49,7 @@ def make_stats(low=0, hi="hi", pipe=None, pattern=r'^comment.*', id_num=None):
             for filename in os.listdir(direc):
                 if pattern.match(filename):
                     if hi=="hi" or i in range(low, hi):
+                        print("{} {}".format(direc_prefix+site+"/"+filename, id_num))
                         with open(direc+filename, "rb") as comment_list_file:
                             comment_list=pickle.load(comment_list_file)
                             for comment in comment_list:

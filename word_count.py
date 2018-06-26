@@ -25,24 +25,29 @@ def trim(word):
 #(instead of dill) and pickle can't handle lambdas
 def dd_of_fd():
     return dd(fd)
-
-#the lowth through the hith files. eg 210, 365 would be the last four months of the year
-def make_stats(low=0, hi="hi", pipe=None):
+def dd_of_dd_of_fd():
+    return dd(dd_of_fd)
+#the lowth through the hith files. eg 210, 365 would be the last four months of the year.
+#pipe is where to send the output instead of returning (if desired) and pattern
+# is a regex of what file start to match. defaults to matching all comment files
+def make_stats(low=0, hi="hi", pipe=None, pattern=r'^comment.*', id_num=None):
     start=time.time()
-    word_counts=dd(fd)
-    word_POS_counts=dd(dd_of_fd)
+    word_counts=dd(dd_of_fd)
+    word_POS_counts=dd(dd_of_dd_of_fd)
+    pattern=re.compile(pattern)
     try:
-        with open("/home/benjamin/sfi/project_stuff/data/analysis_data"+str(low)+".pkl", "rb") as f:
-            d=pickle.load(f)
-            word_counts=d[0]
-            word_POS_counts=d[1]
+        f=open("/home/benjamin/sfi/project_stuff/data/analysis_data"+str(id_num)+".pkl", "wb")
+        d=pickle.load(f)
+        word_counts=d[0]
+        word_POS_counts=d[1]
+        f.close()
     except:
         for site in site_list:
             direc=direc_prefix+site+"/"
             #slightly hacky. please fix
             i=0
             for filename in os.listdir(direc):
-                if filename.startswith("comment"):
+                if pattern.match(filename):
                     if hi=="hi" or i in range(low, hi):
                         with open(direc+filename, "rb") as comment_list_file:
                             comment_list=pickle.load(comment_list_file)
@@ -53,10 +58,12 @@ def make_stats(low=0, hi="hi", pipe=None):
                                         #the tagging
                                         #well, the stemmer was working less well that i hoped
                                         base_word=trim(word_POS_pair[0].lower())#stemmer.stem(word_POS_pair[0].lower())
-                                        word_counts[site][base_word]+=1
-                                        word_POS_counts[site][base_word][word_POS_pair[1]]+=1
+                                        word_counts[site][filename[9:13]][base_word]+=1
+                                        word_POS_counts[site][filename[9:13]][base_word][word_POS_pair[1]]+=1
                     i+=1
-    pickle.dump([word_counts, word_POS_counts], open("/home/benjamin/sfi/project_stuff/data/analysis_data"+str(low)+".pkl", "wb"))
+    f=open("/home/benjamin/sfi/project_stuff/data/analysis_data"+str(id_num)+".pkl", "wb")
+    pickle.dump([word_counts, word_POS_counts], f)
+    f.close()
     #if we called this as part of a multiprocess
     if pipe is not None:
         print("piping "+str(low)+" after time:")

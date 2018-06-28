@@ -17,6 +17,7 @@ import time
 site_list=["atlantic", "breitbart", "motherjones", "thehill"]
 #site_list=["test1", "test2"]
 direc_prefix="/home/benjamin/sfi/project_stuff/SFI_Comments_REU/sample/"
+result_storage_direc="/home/benjamin/sfi/project_stuff/data/"
 
 def trim(word):
     return(re.sub(r'[^A-Za-z \']', '', word))
@@ -27,16 +28,18 @@ def dd_of_fd():
     return dd(fd)
 def dd_of_dd_of_fd():
     return dd(dd_of_fd)
+def dd_of_dd_of_dd_of_fd():
+    return dd(dd_of_dd_of_fd)
 #the lowth through the hith files. eg 210, 365 would be the last four months of the year.
 #pipe is where to send the output instead of returning (if desired) and pattern
 # is a regex of what file start to match. defaults to matching all comment files
-def make_stats(low=0, hi="hi", pipe=None, pattern=r'^comment.*', id_num=None):
+def make_stats(low=None, hi=None, pipe=None, pattern=r'^comment.*', id_num=None):
     start=time.time()
-    word_counts=dd(dd_of_fd)
-    word_POS_counts=dd(dd_of_dd_of_fd)
+    word_counts=dd(dd_of_dd_of_fd)
+    word_POS_counts=dd(dd_of_dd_of_dd_of_fd)
     pattern=re.compile(pattern)
     try:
-        f=open("/home/benjamin/sfi/project_stuff/data/analysis_data"+str(id_num)+".pkl", "wb")
+        f=open(result_storage_direc+"analysis_data"+str(id_num)+".pkl", "wb")
         d=pickle.load(f)
         word_counts=d[0]
         word_POS_counts=d[1]
@@ -48,7 +51,16 @@ def make_stats(low=0, hi="hi", pipe=None, pattern=r'^comment.*', id_num=None):
             i=0
             for filename in os.listdir(direc):
                 if pattern.match(filename):
-                    if hi=="hi" or i in range(low, hi):
+                    year=0
+                    month=0
+                    has_1000=re.compile(r".*?1000.*?")
+                    if has_1000.match(filename):
+                        year=filename[14:18]
+                        month=find_month(int(filename[19:22]))
+                    else:
+                        year=filename[9:13]
+                        month=find_month(int(filename[14:17]))
+                    if hi is None or i in range(low, hi):
                         print("{} {}".format(direc_prefix+site+"/"+filename, id_num))
                         with open(direc+filename, "rb") as comment_list_file:
                             comment_list=pickle.load(comment_list_file)
@@ -59,10 +71,10 @@ def make_stats(low=0, hi="hi", pipe=None, pattern=r'^comment.*', id_num=None):
                                         #the tagging
                                         #well, the stemmer was working less well that i hoped
                                         base_word=trim(word_POS_pair[0].lower())#stemmer.stem(word_POS_pair[0].lower())
-                                        word_counts[site][filename[9:13]][base_word]+=1
-                                        word_POS_counts[site][filename[9:13]][base_word][word_POS_pair[1]]+=1
+                                        word_counts[site][year][month][base_word]+=1
+                                        word_POS_counts[site][year][month][base_word][word_POS_pair[1]]+=1
                     i+=1
-    f=open("/home/benjamin/sfi/project_stuff/data/analysis_data"+str(id_num)+".pkl", "wb")
+    f=open(result_storage_direc+"analysis_data"+str(id_num)+".pkl", "wb")
     pickle.dump([word_counts, word_POS_counts], f)
     f.close()
     #if we called this as part of a multiprocess
@@ -78,6 +90,13 @@ def make_stats(low=0, hi="hi", pipe=None, pattern=r'^comment.*', id_num=None):
         print(time.time()-begin_piping)
     else:
         return [word_counts, word_POS_counts]
+
+def find_month(day):
+    days_per_month=[("Jan", 31),("Feb", 28), ("Mar", 31),("Apr", 30),("May", 31),("Jun",30),("Jul",31),("Aug", 31),("Sep", 30),("Oct", 31),("Nov",30),("Dec",31)]
+    for month, i in days_per_month:
+        day-=i
+        if day<=0:
+            return month
 
 def proportional_diffs(word_counts, word_POS_counts):                                      
     word_diffs=dd(lambda : dd(int))

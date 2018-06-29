@@ -17,7 +17,6 @@ if __name__=="__main__":
     direc_prefix="/home/benjamin/sfi/project_stuff/SFI_Comments_REU/sample/"
     site_list=["atlantic", "breitbart", "motherjones", "thehill"]
     max_processes=multiprocessing.cpu_count()
-    #num_files per total
     pattern=re.compile("^comment.*")
     file_list=[]
     for d in site_list:
@@ -31,11 +30,11 @@ if __name__=="__main__":
     hi=0
     for i in range(max_processes):
         low=hi
-        hi=to_each*(i+1)
+        hi=low+to_each*(i+1)
         if remainder>0:
             hi+=1
             remainder-=1
-        if hi>=num_files:
+        if hi>num_files:
             break
         processes.append(Process(target=make_stats, args=(low, hi, file_list), daemon=True))
         processes[i].start()

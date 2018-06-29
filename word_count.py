@@ -15,7 +15,7 @@ from nltk.probability import FreqDist as fd
 site_list=["atlantic", "breitbart", "motherjones", "thehill"],
 direc_prefix="/home/benjamin/sfi/project_stuff/SFI_Comments_REU/sample/"
 result_storage_direc="/home/benjamin/sfi/project_stuff/data/"
-serP=re.compile(r"/(.*?)/comment")
+serP=re.compile(r".*/(.*?)/comment")
 def trim(word):
     return(re.sub(r'[^A-Za-z \']', '', word))
     
@@ -31,11 +31,8 @@ def make_stats(low=None, hi=None,file_list=None):
     word_counts=dd(dd_of_dd_of_fd)
     word_POS_counts=dd(dd_of_dd_of_dd_of_fd)
     try:
-        f=open(result_storage_direc+"analysis_data"+str(low)+".pkl", "wb")
-        d=pickle.load(f)
-        word_counts=d[0]
-        word_POS_counts=d[1]
-        f.close()
+        with open(result_storage_direc+"analysis_data"+str(low)+".pkl", "rb") as f:
+            pass
     except:
         for i in range(low,hi):
             site=serP.search(file_list[i]).group(1)
@@ -52,10 +49,9 @@ def make_stats(low=None, hi=None,file_list=None):
                                 base_word=trim(word_POS_pair[0].lower())#stemmer.stem(word_POS_pair[0].lower())
                                 word_counts[site][year][month][base_word]+=1
                                 word_POS_counts[site][year][month][base_word][word_POS_pair[1]]+=1
-    f=open(result_storage_direc+"analysis_data"+str(low)+".pkl", "wb")
-    pickle.dump([word_counts, word_POS_counts], f)
-    f.close()
-    return [word_counts, word_POS_counts]
+        with open(result_storage_direc+"analysis_data"+str(low)+".pkl", "wb") as f:
+            pickle.dump([word_counts, word_POS_counts], f)
+        return [word_counts, word_POS_counts]
 
 def find_month(day):
     days_per_month=[("Jan", 31),("Feb", 28), ("Mar", 31),("Apr", 30),("May", 31),("Jun",30),("Jul",31),("Aug", 31),("Sep", 30),("Oct", 31),("Nov",30),("Dec",31)]

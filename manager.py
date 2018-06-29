@@ -5,25 +5,42 @@ Created on Thu Jun 21 15:33:43 2018
 
 @author: benjamin
 """
-
-from multiprocessing import Process, Pipe
+import multiprocessing
+from multiprocessing import Process
 from word_count import make_stats
 import time
-import sys
+import os
+import re
+#import sys
 start=time.time()
 if __name__=="__main__":
-    max_processes=3#int(sys.argv[1])
-    num_files=3#int(sys.argv[2])
-    #num_files differs across corpora unfortunately, but 2415 is the max. 
-    pipes=[]
+    direc_prefix="/home/benjamin/sfi/project_stuff/SFI_Comments_REU/sample/"
+    site_list=["atlantic", "breitbart", "motherjones", "thehill"]
+    max_processes=multiprocessing.cpu_count()
+    #num_files per total
+    pattern=re.compile("^comment.*")
+    file_list=[]
+    for d in site_list:
+        for i in os.listdir(direc_prefix+d+"/"):
+            if pattern.match(i):
+                file_list.append(direc_prefix+d+"/"+i)
+    num_files=len(file_list)
+    to_each=int(num_files/max_processes)
+    remainder=num_files-to_each*max_processes
     processes=[]
-    res=[]
+    hi=0
     for i in range(max_processes):
-        pipes.append(Pipe(duplex="False"))
-        processes.append(Process(target=make_stats, args=(int(num_files/max_processes)*i,int(num_files/max_processes)*(i+1), pipes[i][1], r'^comments_(1000_)?2017.*', i), daemon=True))
+        low=hi
+        hi=to_each*(i+1)
+        if remainder>0:
+            hi+=1
+            remainder-=1
+        if hi>=num_files:
+            break
+        processes.append(Process(target=make_stats, args=(low, hi, file_list), daemon=True))
         processes[i].start()
-    for i in pipes:
-        res.append(i[0].recv()[:])
+    for i in processes:
+        i.join()
 end=time.time()
 print("total time:")
 print(end-start)

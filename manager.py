@@ -11,6 +11,7 @@ from word_count import make_stats
 import time
 import os
 import re
+import random
 #import sys
 start=time.time()
 if __name__=="__main__":
@@ -28,15 +29,17 @@ if __name__=="__main__":
     remainder=num_files-to_each*max_processes
     processes=[]
     hi=0
+    #shuffle so the large files aren't next to each other
+    random.shuffle(file_list)
     for i in range(max_processes):
         low=hi
-        hi=low+to_each*(i+1)
+        hi=low+to_each
         if remainder>0:
             hi+=1
             remainder-=1
         if hi>num_files:
             break
-        processes.append(Process(target=make_stats, args=(low, hi, file_list), daemon=True))
+        processes.append(Process(target=make_stats, args=(low, hi, file_list, num_files), daemon=True))
         processes[i].start()
     for i in processes:
         i.join()

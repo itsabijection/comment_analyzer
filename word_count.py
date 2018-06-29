@@ -16,6 +16,7 @@ site_list=["atlantic", "breitbart", "motherjones", "thehill"],
 direc_prefix="/home/benjamin/sfi/project_stuff/SFI_Comments_REU/sample/"
 result_storage_direc="/home/benjamin/sfi/project_stuff/data/"
 serP=re.compile(r".*/(.*?)/comment")
+day_finder=re.compile(r".*_(\d{1,3})\.txt")
 def trim(word):
     return(re.sub(r'[^A-Za-z \']', '', word))
     
@@ -27,29 +28,28 @@ def dd_of_dd_of_fd():
     return dd(dd_of_fd)
 def dd_of_dd_of_dd_of_fd():
     return dd(dd_of_dd_of_fd)
-def make_stats(low=None, hi=None,file_list=None):
+def make_stats(low=None, hi=None,file_list=None, num_files=0):
     word_counts=dd(dd_of_dd_of_fd)
     word_POS_counts=dd(dd_of_dd_of_dd_of_fd)
     try:
-        with open(result_storage_direc+"analysis_data"+str(low)+".pkl", "rb") as f:
+        with open(result_storage_direc+"analysis_data"+str(low)+"-"+str(hi)+".pkl", "rb") as f:
             pass
     except:
         for i in range(low,hi):
             site=serP.search(file_list[i]).group(1)
             year=int(file_list[i][-12:-8])
-            month=find_month(int(file_list[i][-7:-4]))
-            if hi is None or i in range(low, hi):
-                print("{}".format(file_list[i]))
-                with open(file_list[i], "rb") as comment_list_file:
-                    comment_list=pickle.load(comment_list_file)
-                    for comment in comment_list:
-                        tagged_comment=pos_tag(word_tokenize(comment["raw_message"]))
-                        for word_POS_pair in tagged_comment:
-                                #well, the stemmer was working less well that i hoped
-                                base_word=trim(word_POS_pair[0].lower())#stemmer.stem(word_POS_pair[0].lower())
-                                word_counts[site][year][month][base_word]+=1
-                                word_POS_counts[site][year][month][base_word][word_POS_pair[1]]+=1
-        with open(result_storage_direc+"analysis_data"+str(low)+".pkl", "wb") as f:
+            month=find_month(int(day_finder.search(file_list[i]).group(1)))
+            print("{}".format(file_list[i]))
+            with open(file_list[i], "rb") as comment_list_file:
+                comment_list=pickle.load(comment_list_file)
+                for comment in comment_list:
+                    tagged_comment=pos_tag(word_tokenize(comment["raw_message"]))
+                    for word_POS_pair in tagged_comment:
+                            #well, the stemmer was working less well that i hoped
+                            base_word=trim(word_POS_pair[0].lower())#stemmer.stem(word_POS_pair[0].lower())
+                            word_counts[site][year][month][base_word]+=1
+                            word_POS_counts[site][year][month][base_word][word_POS_pair[1]]+=1
+        with open(result_storage_direc+"analysis_data"+str(low)+"-"+str(hi)+".pkl", "wb") as f:
             pickle.dump([word_counts, word_POS_counts], f)
         return [word_counts, word_POS_counts]
 

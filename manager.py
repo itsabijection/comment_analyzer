@@ -17,7 +17,7 @@ import pickle
 #import sys
 start=time.time()
 if __name__=="__main__":
-    config_file=getcwd()+"/../locations.conf"
+    config_file=os.getcwd()+"/../locations.conf"
     f=open(config_file, "r")
     a=f.read().split("\n")
     direc_prefix=a[0]

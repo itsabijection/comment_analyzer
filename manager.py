@@ -40,7 +40,7 @@ if __name__=="__main__":
     result_storage_direc=a[1]
     with open(result_storage_direc+"file_order.pkl", "wb") as f:
             pickle.dump(file_list, f)
-    log_process=Process(target=logger, args=(q,), daemon=True)
+    log_process=Process(target=logger, args=(q,))
     log_process.start()
     for i in range(max_processes):
         low=hi

@@ -6,18 +6,21 @@ Created on Thu Jun 21 15:33:43 2018
 @author: benjamin
 """
 import multiprocessing
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from word_count import make_stats
+from logger import logger
 import time
 import os
 import re
 import random
+import pickle
 #import sys
 start=time.time()
 if __name__=="__main__":
     direc_prefix="/home/benjamin/sfi/project_stuff/SFI_Comments_REU/sample/"
     site_list=["atlantic", "breitbart", "motherjones", "thehill"]
-    max_processes=multiprocessing.cpu_count()
+    q=Queue()
+    max_processes=multiprocessing.cpu_count()-1
     pattern=re.compile("^comment.*")
     file_list=[]
     for d in site_list:
@@ -31,6 +34,11 @@ if __name__=="__main__":
     hi=0
     #shuffle so the large files aren't next to each other
     random.shuffle(file_list)
+    result_storage_direc="/home/benjamin/sfi/project_stuff/data/"
+    with open(result_storage_direc+"file_order.pkl", "wb") as f:
+            pickle.dump(file_list, f)
+    log_process=Process(target=logger, args=(q,), daemon=True)
+    log_process.start()
     for i in range(max_processes):
         low=hi
         hi=low+to_each
@@ -39,10 +47,11 @@ if __name__=="__main__":
             remainder-=1
         if hi>num_files:
             break
-        processes.append(Process(target=make_stats, args=(low, hi, file_list, num_files), daemon=True))
+        processes.append(Process(target=make_stats, args=(low, hi, file_list, num_files, q), daemon=True))
         processes[i].start()
     for i in processes:
         i.join()
+    q.put("kill")
 end=time.time()
 print("total time:")
 print(end-start)

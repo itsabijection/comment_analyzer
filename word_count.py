@@ -11,11 +11,16 @@ from collections import defaultdict as dd
 from nltk import word_tokenize, pos_tag
 from nltk.probability import FreqDist as fd
 import time
+import sys
+from os import getcwd
 #from nltk.corpus import stopwords
-
 site_list=["atlantic", "breitbart", "motherjones", "thehill"],
-direc_prefix="/home/benjamin/sfi/project_stuff/SFI_Comments_REU/sample/"
-result_storage_direc="/home/benjamin/sfi/project_stuff/data/"
+config_file=getcwd()+"/../locations.conf"
+f=open(config_file, "r")
+a=f.read().split("\n")
+direc_prefix=a[0]
+result_storage_direc=a[1]
+f.close()
 serP=re.compile(r".*/(.*?)/comment")
 day_finder=re.compile(r".*_(\d{1,3})\.txt")
 year_finder=re.compile(r".*comments_(\d{4}).*")
@@ -54,7 +59,7 @@ def make_stats(low=None, hi=None,file_list=None, num_files=0, q=None):
                                 word_counts[site][year][month][base_word]+=1
                                 word_POS_counts[site][year][month][base_word][word_POS_pair[1]]+=1
             except:
-                q.put("Problem with file"+file_list[i])
+                q.put("Problem with file"+file_list[i]+" "+sys.exc_info()[0])
             q.put("{}. Finished {} at {}".format(i,file_list[i], time.time()))
             print("{}. Finished {} at {}".format(i,file_list[i], time.time()))
         with open(result_storage_direc+"analysis_data"+str(low)+"-"+str(hi)+".pkl", "wb") as f:

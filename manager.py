@@ -17,7 +17,10 @@ import pickle
 #import sys
 start=time.time()
 if __name__=="__main__":
-    direc_prefix="/home/benjamin/sfi/project_stuff/SFI_Comments_REU/sample/"
+    config_file=getcwd()+"/../locations.conf"
+    f=open(config_file, "r")
+    a=f.read().split("\n")
+    direc_prefix=a[0]
     site_list=["atlantic", "breitbart", "motherjones", "thehill"]
     q=Queue()
     max_processes=multiprocessing.cpu_count()-1
@@ -34,7 +37,7 @@ if __name__=="__main__":
     hi=0
     #shuffle so the large files aren't next to each other
     random.shuffle(file_list)
-    result_storage_direc="/home/benjamin/sfi/project_stuff/data/"
+    result_storage_direc=a[1]
     with open(result_storage_direc+"file_order.pkl", "wb") as f:
             pickle.dump(file_list, f)
     log_process=Process(target=logger, args=(q,), daemon=True)

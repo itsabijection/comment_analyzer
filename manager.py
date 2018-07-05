@@ -6,7 +6,7 @@ Created on Thu Jun 21 15:33:43 2018
 @author: benjamin
 """
 from multiprocessing import Process, Queue, cpu_count
-from better_word_count import make_stats
+from word_count import make_stats
 from nltk.probability import FreqDist as fd
 from collections import defaultdict as dd
 from logger import logger

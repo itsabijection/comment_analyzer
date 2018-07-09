@@ -14,6 +14,9 @@ import dill as pickle
 import time
 import os
 import re
+import gc
+
+start_file=0#1010
 
 config_file=os.getcwd()+"/../locations.conf"
 f=open(config_file, "r")
@@ -30,30 +33,36 @@ for d in site_list:
     for i in os.listdir(direc_prefix+d+"/"):
         if pattern.match(i):
             files.append(direc_prefix+d+"/"+i)
-            
+files=files[start_file:]        
 #site, year, month, word
 word_counts=dd(lambda: dd(lambda: dd(fd)))
 #site, year, month, word, POS
 word_POS_counts=dd(lambda: dd(lambda: dd(lambda: dd(fd))))
+processed=[]
+if start_file!=0:
+    with open(result_storage_direc+"intermediate"+str(start_file)+".pkl", "rb") as f:
+        [word_counts, word_POS_counts, processed]=pickle.load(f)
 
 start=time.time()
 if __name__=="__main__":
     file_q  = Queue()
     log_q   = Queue()
     stats_q = Queue()
-    processed=[]
+    kill_q  = Queue()
     for i in files:
         file_q.put(i)
     log_process=Process(target=logger, args=(log_q,))
     log_process.start()
     processes=[]
     for i in range(max_processes):
-        processes.append(Process(target=make_stats, args=(log_q, file_q, stats_q, i), daemon=True))
+        processes.append(Process(target=make_stats, args=(log_q, file_q, stats_q, i, kill_q), daemon=True))
         processes[i].start()
     for i in range(len(files)):
         if i>0 and i%10==0:
-            with open(result_storage_direc+"intermediate.pkl", "wb") as f:
+            with open(result_storage_direc+"intermediate"+str(i+start_file)+".pkl", "wb") as f:
                 pickle.dump([word_counts, word_POS_counts, processed], f)
+            if i>20:
+                os.remove(result_storage_direc+"intermediate"+str(i-20+start_file)+".pkl")
         [partial_word_counts, partial_word_POS_counts, site, year, month, done_file]=stats_q.get()
         processed.append(done_file)
         for w in partial_word_counts.keys():
@@ -61,6 +70,7 @@ if __name__=="__main__":
         for w in partial_word_POS_counts.keys():
             for p in partial_word_POS_counts[w].keys():
                 word_POS_counts[site][year][month][w][p]+=partial_word_POS_counts[w][p]
+        gc.collect()
     with open(result_storage_direc+"stats.pkl", "wb") as f:
             pickle.dump([word_counts, word_POS_counts], f)
     for i in processes:

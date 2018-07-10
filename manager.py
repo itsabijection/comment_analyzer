@@ -13,8 +13,9 @@ from logger import logger
 import dill as pickle
 import time
 import os
+import signal
 import re
-import gc
+import objgraph
 
 start_file=0#1010
 
@@ -25,7 +26,7 @@ direc_prefix=a[0]
 site_list=["atlantic", "breitbart", "motherjones", "thehill"]
 result_storage_direc=a[1]
 
-max_processes=cpu_count()-1
+max_processes=3
 
 pattern=re.compile("^comment.*")
 files=[]
@@ -58,23 +59,31 @@ if __name__=="__main__":
         processes.append(Process(target=make_stats, args=(log_q, file_q, stats_q, i, kill_q), daemon=True))
         processes[i].start()
     for i in range(len(files)):
+        print()
+        objgraph.show_most_common_types()
+        print()
+        objgraph.show_growth()
+        print()
+        objgraph.get_leaking_objects()
+        print("next loop")
         if i>0 and i%10==0:
             with open(result_storage_direc+"intermediate"+str(i+start_file)+".pkl", "wb") as f:
                 pickle.dump([word_counts, word_POS_counts, processed], f)
             if i>20:
                 os.remove(result_storage_direc+"intermediate"+str(i-20+start_file)+".pkl")
-        [partial_word_counts, partial_word_POS_counts, site, year, month, done_file]=stats_q.get()
+        [partial_word_counts, partial_word_POS_counts, site, year, month, done_file, p]=stats_q.get()
+        os.kill(p, signal.SIGTERM)
+        new_process=Process(target=make_stats, args=(log_q, file_q, stats_q, i, kill_q), daemon=True)
+        new_process.start()
         processed.append(done_file)
         for w in partial_word_counts.keys():
             word_counts[site][year][month][w]+=partial_word_counts[w]
         for w in partial_word_POS_counts.keys():
             for p in partial_word_POS_counts[w].keys():
                 word_POS_counts[site][year][month][w][p]+=partial_word_POS_counts[w][p]
-        gc.collect()
+        kill_q.put("Done")
     with open(result_storage_direc+"stats.pkl", "wb") as f:
             pickle.dump([word_counts, word_POS_counts], f)
-    for i in processes:
-        i.join()
     log_q.put("kill")
 end=time.time()
 print("total time:")

@@ -20,8 +20,7 @@ from nltk import word_tokenize, pos_tag
 from nltk.probability import FreqDist as fd
 import time
 import sys
-from os import getcwd
-import gc
+from os import getcwd, getpid
 #from nltk.corpus import stopwords
 site_list=["atlantic", "breitbart", "motherjones", "thehill"],
 config_file=getcwd()+"/../locations.conf"
@@ -37,7 +36,7 @@ def trim(word):
     return(re.sub(r'[^A-Za-z \']', '', word))
 
 def make_stats(log_q, file_q, stats_q, i, kill_q):
-        while not file_q.empty() and kill_q.empty():
+        while not file_q.empty():
             c_file=file_q.get()
             word_counts=fd()
             word_POS_counts=dd(fd)
@@ -45,7 +44,7 @@ def make_stats(log_q, file_q, stats_q, i, kill_q):
             year=year_finder.search(c_file).group(1)
             month=find_month(int(day_finder.search(c_file).group(1)))
             log_q.put("Started {} at {}".format(c_file, time.time()))
-#            print("Started {} at {}".format(c_file, time.time()))
+            #print("Started {} at {}".format(c_file, time.time()))
             try:
                 with open(c_file, "rb") as comment_list_file:
                     comment_list=pickle.load(comment_list_file)
@@ -58,9 +57,8 @@ def make_stats(log_q, file_q, stats_q, i, kill_q):
             except:
                 log_q.put("Problem with file "+c_file+" "+str(sys.exc_info()[0]))
             log_q.put("Finished {} at {}".format(c_file, time.time()))
-#            print("Finished {} at {}".format(c_file, time.time()))
-            stats_q.put([word_counts, word_POS_counts, site, year, month, c_file])
-            gc.collect()
+            #print("Finished {} at {}".format(c_file, time.time()))
+            stats_q.put([word_counts, word_POS_counts, site, year, month, c_file, getpid()])
 
 def find_month(day):
     days_per_month=[("Jan", 31),("Feb", 28), ("Mar", 31),("Apr", 30),("May", 31),("Jun",30),("Jul",31),("Aug", 31),("Sep", 30),("Oct", 31),("Nov",30),("Dec",31)]

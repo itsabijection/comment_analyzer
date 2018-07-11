@@ -31,7 +31,7 @@ result_storage_direc=a[1]
 f.close()
 serP=re.compile(r".*/(.*?)/comment")
 day_finder=re.compile(r".*_(\d{1,3})\.txt")
-year_finder=re.compile(r".*comments_(\d{4}).*")
+year_finder=re.compile(r".*comments_.*?(\d{4})_\d{1,3}.*")
 def trim(word):
     return(re.sub(r'[^A-Za-z \']', '', word))
 

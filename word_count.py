@@ -35,7 +35,7 @@ year_finder=re.compile(r".*comments_.*?(\d{4})_\d{1,3}.*")
 def trim(word):
     return(re.sub(r'[^A-Za-z \']', '', word))
 
-def make_stats(log_q, file_q, stats_q, i, kill_q):
+def make_stats(log_q, file_q, stats_q, i):
         while not file_q.empty():
             c_file=file_q.get()
             word_counts=fd()
@@ -44,7 +44,7 @@ def make_stats(log_q, file_q, stats_q, i, kill_q):
             year=year_finder.search(c_file).group(1)
             month=find_month(int(day_finder.search(c_file).group(1)))
             log_q.put("Started {} at {}".format(c_file, time.time()))
-            #print("Started {} at {}".format(c_file, time.time()))
+            print("Started {} at {}".format(c_file, time.time()))
             try:
                 with open(c_file, "rb") as comment_list_file:
                     comment_list=pickle.load(comment_list_file)
@@ -57,7 +57,7 @@ def make_stats(log_q, file_q, stats_q, i, kill_q):
             except:
                 log_q.put("Problem with file "+c_file+" "+str(sys.exc_info()[0]))
             log_q.put("Finished {} at {}".format(c_file, time.time()))
-            #print("Finished {} at {}".format(c_file, time.time()))
+            print("Finished {} at {}".format(c_file, time.time()))
             stats_q.put([word_counts, word_POS_counts, site, year, month, c_file, getpid()])
 
 def find_month(day):

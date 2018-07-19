@@ -19,19 +19,19 @@ config_file=os.getcwd()+"/../locations.conf"
 f=open(config_file, "r")
 a=f.read().split("\n")
 direc_prefix=a[0]
-site_list=["atlantic", "breitbart", "motherjones", "thehill"]
+site_list=["breitbart"]
 result_storage_direc=a[1]
-max_processes=3
-months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+max_processes=18
+months=['Feb','Mar']
 day_finder=re.compile(r".*_(\d{1,3})\.txt")
 year_finder=re.compile(r".*comments_.*?(\d{4})_\d{1,3}.*")
-pattern=re.compile(r"comments(_1000)?_2016.*?")
+pattern=re.compile(r"comments(_1000)?_2017.*?")
 files=dd(list)
 for d in site_list:
     for i in os.listdir(direc_prefix+d+"/"):
         if pattern.match(i):
             files[find_month(int(day_finder.search(i).group(1)))].append(direc_prefix+d+"/"+i)
-
+print(files)
 processed=[]
 start=time.time()
 if __name__=="__main__":
@@ -46,13 +46,14 @@ if __name__=="__main__":
         kill_q  = Queue()
         for i in files[r]:
             file_q.put(i)
+        print(file_q)
         log_process=Process(target=logger, args=(log_q,))
         log_process.start()
         processes=[]
         for i in range(max_processes):
-            processes.append(Process(target=make_stats, args=(log_q, file_q, stats_q, i, kill_q), daemon=True))
+            processes.append(Process(target=make_stats, args=(log_q, file_q, stats_q, i), daemon=True))
             processes[i].start()
-        for i in range(len(files)):
+        for i in range(len(files[r])):
             [partial_word_counts, partial_word_POS_counts, site, year, month, done_file, p]=stats_q.get()
             for w in partial_word_counts.keys():
                 word_counts[site][year][month][w]+=partial_word_counts[w]
@@ -65,9 +66,11 @@ if __name__=="__main__":
                 if i>20:
                     os.remove(result_storage_direc+r+"intermediate"+str(i-20)+".pkl")
             kill_q.put("Done")
-        with open(result_storage_direc+r+"16stats.pkl", "wb") as f:
+        with open(result_storage_direc+r+"2016bbstats.pkl", "wb") as f:
                 pickle.dump([word_counts, word_POS_counts], f)
         log_q.put("kill")
+        for i in processes:
+            i.join()
 end=time.time()
 print("total time:")
 print(end-start)

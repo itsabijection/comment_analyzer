@@ -13,7 +13,9 @@ import logging
 from collections import defaultdict as dd
 from word_count import find_month
 
-months=["Jan", "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+months=["Jan", "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][::-1]
+def trim(word):
+    return(re.sub(r'[^A-Za-z \']', '', word).lower())
 config_file=os.getcwd()+"/../locations.conf"
 f=open(config_file, "r")
 a=f.read().split("\n")
@@ -29,7 +31,7 @@ class sentences(object):
             global comment_list
             comment_list=pickle.load(open(file, "rb"))
             for j in comment_list:
-                yield(j["raw_message"].split())
+                yield(trim(j["raw_message"]).split())
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 comment_pattern=re.compile("^comments_(1000_)?2016.*")
 for site in site_list:
@@ -42,4 +44,4 @@ for site in site_list:
         file_list=files[month]
         s=sentences(file_list)
         model=word2vec.Word2Vec(s, iter=10, min_count=2, size=300)
-        model.save("{}2016{}.w2v".format(site,month))
+        model.save(result_storage_direc+"{}2016{}.w2v".format(site,month))
